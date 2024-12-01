@@ -1,4 +1,5 @@
 const std = @import("std");
+const assert = std.debug.assert;
 
 fn openFile(path: []const u8, flags: std.fs.File.OpenFlags) std.fs.File.OpenError!std.fs.File {
     if (std.fs.path.isAbsolute(path)) {
@@ -43,7 +44,7 @@ fn partTwo(allocator: std.mem.Allocator, first_col: []i64, second_col: []i64) !u
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.detectLeaks();
+    defer assert(!gpa.detectLeaks());
 
     const allocator = gpa.allocator();
 
