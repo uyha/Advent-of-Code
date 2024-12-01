@@ -20,6 +20,27 @@ fn partOne(first_col: []i64, second_col: []i64) u64 {
     return result;
 }
 
+fn partTwo(allocator: std.mem.Allocator, first_col: []i64, second_col: []i64) !u64 {
+    var result: u64 = 0;
+    var counts = std.AutoHashMap(i64, u32).init(allocator);
+    defer counts.deinit();
+
+    for (first_col) |first| {
+        if (counts.contains(first)) continue;
+
+        for (second_col) |second| {
+            if (first != second) continue;
+            try counts.put(first, 1 + (counts.get(first) orelse 0));
+        }
+    }
+
+    for (first_col) |first| {
+        result += @abs(first) * (counts.get(first) orelse 0);
+    }
+
+    return result;
+}
+
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.detectLeaks();
@@ -58,5 +79,5 @@ pub fn main() !void {
         try second_col.append(second);
     }
 
-    std.debug.print("{}\n", .{partOne(first_col.items, second_col.items)});
+    std.debug.print("{}\n", .{try partTwo(allocator, first_col.items, second_col.items)});
 }
