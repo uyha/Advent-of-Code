@@ -76,4 +76,5 @@ pub fn build(b: *std.Build) void {
     const options: ExecutableOptions = .{ .target = target, .optimize = optimize };
 
     addDay(b, "day1", options);
+    addDay(b, "day2", options);
 }
