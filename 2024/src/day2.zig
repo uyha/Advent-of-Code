@@ -72,6 +72,40 @@ fn partOne(generator: *ReportGenerator) !u32 {
     return result;
 }
 
+fn partTwo(generator: *ReportGenerator) !u32 {
+    var result: u32 = 0;
+
+    level: while (try generator.next()) |levels| {
+        defer levels.deinit();
+        if (safe(levels.items)) {
+            result += 1;
+            continue :level;
+        }
+
+        var dampened_levels = try std.ArrayList(u32).initCapacity(
+            generator.allocator,
+            levels.items.len,
+        );
+        defer dampened_levels.deinit();
+
+        for (0..levels.items.len) |skip| {
+            for (levels.items, 0..) |level, i| {
+                if (i == skip) {
+                    continue;
+                }
+                try dampened_levels.append(level);
+            }
+            if (safe(dampened_levels.items)) {
+                result += 1;
+                continue :level;
+            }
+            try dampened_levels.resize(0);
+        }
+    }
+
+    return result;
+}
+
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer assert(!gpa.detectLeaks());
@@ -93,5 +127,5 @@ pub fn main() !void {
     defer allocator.free(content);
 
     var generator = ReportGenerator.init(allocator, content);
-    std.debug.print("{}\n", .{try partOne(&generator)});
+    std.debug.print("{}\n", .{try partTwo(&generator)});
 }
