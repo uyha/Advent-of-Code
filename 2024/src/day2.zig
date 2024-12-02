@@ -31,36 +31,42 @@ const ReportGenerator = struct {
     }
 };
 
+fn safe(levels: []const u32) bool {
+    if (levels.len == 1) {
+        return false;
+    }
+
+    var increase: ?bool = null;
+
+    for (levels[0 .. levels.len - 1], levels[1..]) |current, next| {
+        const diff = if (current > next) current - next else next - current;
+        // No need to check current == next since this condition already implies
+        // that
+        if (diff < 1 or diff > 3) {
+            return false;
+        }
+
+        if (increase) |inc| {
+            if (inc != (current < next)) {
+                return false;
+            }
+        } else {
+            increase = current < next;
+        }
+    }
+
+    return true;
+}
+
 fn partOne(generator: *ReportGenerator) !u32 {
     var result: u32 = 0;
 
-    level: while (try generator.next()) |levels| {
+    while (try generator.next()) |levels| {
         defer levels.deinit();
 
-        if (levels.items.len == 1) {
-            continue :level;
+        if (safe(levels.items)) {
+            result += 1;
         }
-
-        var increase: ?bool = null;
-
-        for (levels.items[0 .. levels.items.len - 1], levels.items[1..]) |current, next| {
-            const diff = if (current > next) current - next else next - current;
-            // No need to check current == next since this condition already implies
-            // that
-            if (diff < 1 or diff > 3) {
-                continue :level;
-            }
-
-            if (increase) |inc| {
-                if (inc != (current < next)) {
-                    continue :level;
-                }
-            } else {
-                increase = current < next;
-            }
-        }
-
-        result += 1;
     }
 
     return result;
