@@ -1,12 +1,7 @@
 const std = @import("std");
 const assert = std.debug.assert;
 
-fn openFile(path: []const u8, flags: std.fs.File.OpenFlags) std.fs.File.OpenError!std.fs.File {
-    if (std.fs.path.isAbsolute(path)) {
-        return std.fs.openFileAbsolute(path, flags);
-    }
-    return std.fs.cwd().openFile(path, flags);
-}
+const openFile = @import("utils.zig").openFile;
 
 fn partOne(first_col: []i64, second_col: []i64) u64 {
     var result: u64 = 0;
