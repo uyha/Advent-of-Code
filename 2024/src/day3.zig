@@ -61,10 +61,11 @@ const MulParser = struct {
 
 const DoDontParser = struct {
     const Self = @This();
-    const State = enum { d, o, n, @"'", t };
+    const State = enum { d, o, n, @"'", t, @"(", @")" };
 
     state: State = .d,
     enabled: bool = true,
+    is_do: bool = true,
 
     pub fn feed(self: *Self, c: u8) bool {
         switch (self.state) {
@@ -74,11 +75,15 @@ const DoDontParser = struct {
             },
             .o => if (c == 'o') {
                 self.state = .n;
-                self.enabled = true;
+                self.is_do = true;
                 return true;
             },
             .n => if (c == 'n') {
                 self.state = .@"'";
+                self.is_do = false;
+                return true;
+            } else if (c == '(') {
+                self.state = .@")";
                 return true;
             },
             .@"'" => if (c == '\'') {
@@ -86,8 +91,16 @@ const DoDontParser = struct {
                 return true;
             },
             .t => if (c == 't') {
+                self.state = .@"(";
+                return true;
+            },
+            .@"(" => if (c == '(') {
+                self.state = .@")";
+                return true;
+            },
+            .@")" => if (c == ')') {
+                self.enabled = self.is_do;
                 self.state = .d;
-                self.enabled = false;
                 return true;
             },
         }
