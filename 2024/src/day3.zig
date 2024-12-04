@@ -3,7 +3,7 @@ const assert = std.debug.assert;
 
 const openFile = @import("utils.zig").openFile;
 
-const Parser = struct {
+const MulParser = struct {
     const Self = @This();
 
     const State = enum { m, u, l, @"(", @"#1", @"#2", @")" };
@@ -59,16 +59,78 @@ const Parser = struct {
     }
 };
 
+const DoDontParser = struct {
+    const Self = @This();
+    const State = enum { d, o, n, @"'", t };
+
+    state: State = .d,
+    enabled: bool = true,
+
+    pub fn feed(self: *Self, c: u8) bool {
+        switch (self.state) {
+            .d => if (c == 'd') {
+                self.state = .o;
+                return true;
+            },
+            .o => if (c == 'o') {
+                self.state = .n;
+                self.enabled = true;
+                return true;
+            },
+            .n => if (c == 'n') {
+                self.state = .@"'";
+                return true;
+            },
+            .@"'" => if (c == '\'') {
+                self.state = .t;
+                return true;
+            },
+            .t => if (c == 't') {
+                self.state = .d;
+                self.enabled = false;
+                return true;
+            },
+        }
+
+        self.state = .d;
+        return false;
+    }
+};
+
 fn partOne(file: std.fs.File) !u64 {
     var result: u64 = 0;
-    var parser = Parser{};
+    var parser = MulParser{};
     var buffered_reader = std.io.bufferedReader(file.reader());
     var reader = buffered_reader.reader();
 
     while (reader.readByte()) |c| {
         if (parser.feed(c)) {
-            std.debug.print("{}\n", .{parser.first_num * parser.second_num});
             result += parser.first_num * parser.second_num;
+        }
+    } else |err| {
+        switch (err) {
+            error.EndOfStream => {},
+            else => return err,
+        }
+    }
+
+    return result;
+}
+
+fn partTwo(file: std.fs.File) !u64 {
+    var result: u64 = 0;
+    var do_dont_parser = DoDontParser{};
+    var mul_parser = MulParser{};
+    var buffered_reader = std.io.bufferedReader(file.reader());
+    var reader = buffered_reader.reader();
+
+    while (reader.readByte()) |c| {
+        if (do_dont_parser.feed(c)) {
+            continue;
+        }
+
+        if (mul_parser.feed(c) and do_dont_parser.enabled) {
+            result += mul_parser.first_num * mul_parser.second_num;
         }
     } else |err| {
         switch (err) {
@@ -96,5 +158,5 @@ pub fn main() !void {
     const file = try openFile(args[1], .{});
     defer file.close();
 
-    std.debug.print("{}\n", .{try partOne(file)});
+    std.debug.print("{}\n", .{try partTwo(file)});
 }
