@@ -77,4 +77,5 @@ pub fn build(b: *std.Build) void {
 
     addDay(b, "day1", options);
     addDay(b, "day2", options);
+    addDay(b, "day3", options);
 }
