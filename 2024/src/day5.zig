@@ -97,11 +97,81 @@ fn partOne(allocator: std.mem.Allocator, file: File) !u64 {
     return result;
 }
 
+fn rotate(comptime T: type, source: []T, first_: usize, middle_: usize, last: usize) usize {
+    var first = first_;
+    var middle = middle_;
+
+    while (true) {
+        if (first == middle) {
+            return last;
+        }
+        if (middle == last) {
+            return first;
+        }
+
+        var write = first;
+        var next_read = first;
+        var read = middle;
+
+        while (read < last) {
+            defer {
+                write += 1;
+                read += 1;
+            }
+
+            if (write == next_read) {
+                next_read = read;
+            }
+
+            std.mem.swap(T, &source[write], &source[read]);
+        }
+
+        first = write;
+        middle = next_read;
+    }
+}
+
 fn partTwo(allocator: std.mem.Allocator, file: File) !u64 {
     var content = try Content.parse(allocator, file);
     defer content.deinit();
 
-    return 0;
+    var result: u64 = 0;
+
+    update: for (content.updates.items) |*update| {
+        var correct = true;
+
+        check: for (update.items, 0..) |current_page, index| {
+            for (update.items[index + 1 ..]) |next_page| {
+                if (content.rules.get(next_page)) |rule| {
+                    if (rule.contains(current_page)) {
+                        correct = false;
+                        break :check;
+                    }
+                }
+            }
+        }
+
+        if (correct) {
+            continue :update;
+        }
+
+        for (0..update.items.len - 1) |current| {
+            for (current + 1..update.items.len) |next| {
+                const current_page = update.items[current];
+                const next_page = update.items[next];
+
+                if (content.rules.get(next_page)) |rule| {
+                    if (rule.contains(current_page)) {
+                        _ = rotate(u64, update.items, current, next, next + 1);
+                    }
+                }
+            }
+        }
+
+        result += update.items[update.items.len / 2];
+    }
+
+    return result;
 }
 
 pub fn main() !void {
@@ -120,5 +190,5 @@ pub fn main() !void {
     const file = try openFile(args[1], .{});
     defer file.close();
 
-    std.debug.print("{}\n", .{try partOne(allocator, file)});
+    std.debug.print("{}\n", .{try partTwo(allocator, file)});
 }
