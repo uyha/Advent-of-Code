@@ -75,9 +75,9 @@ pub fn build(b: *std.Build) void {
 
     const options: ExecutableOptions = .{ .target = target, .optimize = optimize };
 
-    addDay(b, "day1", options);
-    addDay(b, "day2", options);
-    addDay(b, "day3", options);
-    addDay(b, "day4", options);
-    addDay(b, "day5", options);
+    for (1..7) |day| {
+        var buffer = std.ArrayList(u8).init(b.allocator);
+        std.fmt.format(buffer.writer(), "day{}", .{day}) catch @panic("OOM");
+        addDay(b, buffer.items, options);
+    }
 }
